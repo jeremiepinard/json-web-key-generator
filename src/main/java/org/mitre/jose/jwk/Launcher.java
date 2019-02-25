@@ -1,13 +1,13 @@
 package org.mitre.jose.jwk;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.jwk.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -24,10 +24,10 @@ import com.google.gson.JsonParser;
 import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.ECKey.Curve;
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.KeyType;
-import com.nimbusds.jose.jwk.KeyUse;
+import sun.misc.BASE64Encoder;
+import sun.security.provider.X509Factory;
+
+import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 
 /**
  * Small Helper App to generate Json Web Keys
@@ -41,7 +41,7 @@ public class Launcher {
         options = new Options();
 
         options.addOption("t", true, "Key Type, one of: " + KeyType.RSA.getValue() + ", " + KeyType.OCT.getValue() + ", " +
-                KeyType.EC.getValue());
+            KeyType.EC.getValue());
         options.addOption("s", true, "Key Size in bits, required for RSA and oct key types. Must be an integer divisible by 8");
         options.addOption("u", true, "Usage, one of: enc, sig (optional)");
         options.addOption("a", true, "Algorithm (optional)");
@@ -49,10 +49,10 @@ public class Launcher {
         options.addOption("I", false, "Don't generate a Key ID if none defined");
         options.addOption("p", false, "Display public key separately");
         options.addOption("c", true, "Key Curve, required for EC key type. Must be one of " + Curve.P_256 + ", " + Curve.P_384
-				+ ", " + Curve.P_521);
+            + ", " + Curve.P_521);
         options.addOption("S", false, "Wrap the generated key in a KeySet");
         options.addOption("o", true, "Write output to file (will append to existing KeySet if -S is used), No Display of Key "
-				+ "Material");
+            + "Material");
 
         CommandLineParser parser = new PosixParser();
         try {
@@ -112,6 +112,13 @@ public class Launcher {
                 }
 
                 jwk = RSAKeyMaker.make(keySize, keyUse, keyAlg, kid);
+
+                System.out.println("RSA Private Key:");
+                outputKeyWithHeader(((RSAKey) jwk).toRSAPrivateKey(), "PRIVATE KEY");
+
+                System.out.println("RSA Public Key:");
+                outputKeyWithHeader(((RSAKey) jwk).toRSAPublicKey(), "PUBLIC KEY");
+
             } else if (keyType.equals(KeyType.OCT)) {
                 // surrounding try/catch catches numberformatexception from this
                 if (Strings.isNullOrEmpty(size)) {
@@ -166,7 +173,17 @@ public class Launcher {
             printUsageAndExit("Could not parse existing KeySet: " + e.getMessage());
         } catch (IOException e) {
             printUsageAndExit("Could not read existing KeySet: " + e.getMessage());
+        } catch (JOSEException e) {
+            e.printStackTrace();
         }
+    }
+
+    private static void outputKeyWithHeader(Key key, String type) throws IOException {
+        System.out.println(String.format("-----BEGIN %s-----", type));
+        BASE64Encoder encoder = new BASE64Encoder();
+        encoder.encodeBuffer(key.getEncoded(), System.out);
+        System.out.println(String.format("-----END %s-----", type));
+        System.out.println();
     }
 
     private static String generateKid(KeyUse keyUse) {
@@ -175,7 +192,7 @@ public class Launcher {
     }
 
     private static void writeKeyToFile(boolean keySet, String outFile, JWK jwk, Gson gson) throws IOException,
-            java.text.ParseException {
+        java.text.ParseException {
         JsonElement json;
         File output = new File(outFile);
         if (keySet) {
