@@ -1,33 +1,27 @@
 package org.mitre.jose.jwk;
 
-import java.io.*;
-import java.security.Key;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.jwk.*;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.PosixParser;
-import org.apache.commons.io.IOUtils;
-
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.nimbusds.jose.Algorithm;
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.ECKey.Curve;
+import com.nimbusds.jose.jwk.*;
+import org.apache.commons.cli.*;
+import org.apache.commons.io.IOUtils;
 import sun.misc.BASE64Encoder;
-import sun.security.provider.X509Factory;
 
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.security.Key;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Small Helper App to generate Json Web Keys
